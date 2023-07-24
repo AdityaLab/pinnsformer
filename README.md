@@ -13,13 +13,13 @@ Paper + Appendix:
 To train the baseline physics-informed neural networks (PINNs):
 
 ```
-python3 main.py --model mlp --eq_name convection --act tanh --dev cuda:0
+python3 main.py --model mlp --eq_name convection --act tanh --dev cuda:0 --seed 0
 ```
 
 To train the PINNsFormer:
 
 ```
-python3 main.py --model trans --eq_name convection --act wave --dev cuda:0
+python3 main.py --model trans --eq_name convection --act wave --dev cuda:0 --seed 0
 ```
 
 The type of equation can be selected from ```{burger, convection, 1d_reaction, reaction_diffusion, helmholtz}```
