@@ -6,7 +6,7 @@ Implementation of the paper "PINNsFormer: A Transformer-Based Framework For Phys
 
 Authors: Leo Zhiyuan Zhao, Xueying Ding, B.Aditya Prakash
 
-Paper + Appendix: 
+Paper + Appendix: [https://arxiv.org/abs/2307.11833](https://arxiv.org/abs/2307.11833)
 
 ## Training
 
