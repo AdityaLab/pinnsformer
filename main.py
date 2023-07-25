@@ -125,7 +125,6 @@ def test(res, model, device, step=5, stepsize=1e-4):
 
 if __name__ == "__main__" :
     parser = argparse.ArgumentParser(description='PyTorch PINNsformer')
-    parser.add_argument('--seed', type=int, default=0, help='select model by name')
 
     parser.add_argument('--model', type=str, default='trans', help='select model by name')
     parser.add_argument('--act', type=str, default='relu', help='activation function')
@@ -145,13 +144,6 @@ if __name__ == "__main__" :
 
     parser.add_argument('--dev', type=str, default='cuda:0', help='device name')   
     args = parser.parse_args()
-
-    seed = args.seed
-
-    np.random.seed(seed)
-    random.seed(seed)
-    torch.manual_seed(seed)
-    torch.cuda.manual_seed(seed)
 
     device = args.dev
 
