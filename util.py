@@ -1,4 +1,6 @@
 import numpy as np
+import torch.nn as nn
+import copy
 
 def get_data(x_range, y_range, x_num, y_num):
     x = np.linspace(x_range[0], x_range[1], x_num)
@@ -32,3 +34,7 @@ def make_time_sequence(src, num_step=5, step=1e-4):
     for i in range(num_step):
         src[:,i,-1] += step*i
     return src
+
+
+def get_clones(module, N):
+    return nn.ModuleList([copy.deepcopy(module) for i in range(N)])

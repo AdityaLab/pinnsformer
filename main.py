@@ -1,12 +1,17 @@
 import torch
 import torch.nn as nn
 import numpy as np
-from model import Transformer, MLP  
 from torch.optim import Adam, LBFGS
 from torch.optim.lr_scheduler import MultiStepLR
 from tqdm import tqdm
 import argparse
 import random
+import os
+
+from model.fls import FLS
+from model.pinn import PINNs
+from model.pinnsformer import PINNsformer
+from model.qres import QRes  
 
 from util import *
 
@@ -15,11 +20,16 @@ def init_weights(m):
         torch.nn.init.xavier_uniform(m.weight)
         m.bias.data.fill_(0.01)
 
-def train(res, b_left, b_right, b_upper, b_lower, eq_name, eq_param, device, act='sin', model='mlp', epoch=1000, step=5, stepsize=1e-4):
+def train(res, b_left, b_right, b_upper, b_lower, eq_name, eq_param, device, model='mlp', epoch=1000, step=5, stepsize=1e-4):
     if model == 'mlp':
-        model = MLP(in_dim=2, hidden_dim=512, out_dim=1, num_layer=4, act_fn=act).to(device)
+        model = MLP(in_dim=2, hidden_dim=512, out_dim=1, num_layer=4).to(device)
     if model == 'trans':
-        model = Transformer(d_out=1, d_hidden=512, d_model=32, N=1, heads=2, act_fn=act).to(device)
+        model = Transformer(d_out=1, d_hidden=512, d_model=32, N=1, heads=2).to(device)
+    if model == 'qres':
+        model = QRes(in_dim=2, hidden_dim=512, out_dim=1, num_layer=2).to(device)
+    if model == 'fls':
+        model = FLS(in_dim=2, hidden_dim=512, out_dim=1, num_layer=4).to(device)
+    
     model.apply(init_weights)
 
     optim = LBFGS(model.parameters(), line_search_fn='strong_wolfe')
@@ -27,11 +37,12 @@ def train(res, b_left, b_right, b_upper, b_lower, eq_name, eq_param, device, act
     print(model)
     print(get_n_params(model))
 
-    res = make_time_sequence(res, num_step=step, step=stepsize)
-    b_left = make_time_sequence(b_left, num_step=step, step=stepsize)
-    b_right = make_time_sequence(b_right, num_step=step, step=stepsize)
-    b_upper = make_time_sequence(b_upper, num_step=step, step=stepsize)
-    b_lower = make_time_sequence(b_lower, num_step=step, step=stepsize)
+    if model == 'trans':
+        res = make_time_sequence(res, num_step=step, step=stepsize)
+        b_left = make_time_sequence(b_left, num_step=step, step=stepsize)
+        b_right = make_time_sequence(b_right, num_step=step, step=stepsize)
+        b_upper = make_time_sequence(b_upper, num_step=step, step=stepsize)
+        b_lower = make_time_sequence(b_lower, num_step=step, step=stepsize)
 
     res = torch.tensor(res, dtype=torch.float32, requires_grad=True).to(device)
     b_left = torch.tensor(b_left, dtype=torch.float32, requires_grad=True).to(device)
@@ -39,12 +50,21 @@ def train(res, b_left, b_right, b_upper, b_lower, eq_name, eq_param, device, act
     b_upper = torch.tensor(b_upper, dtype=torch.float32, requires_grad=True).to(device)
     b_lower = torch.tensor(b_lower, dtype=torch.float32, requires_grad=True).to(device)
 
-    x_res, t_res = res[:,:,0:1], res[:,:,1:2]
-    x_left, t_left = b_left[:,:,0:1], b_left[:,:,1:2]
-    x_right, t_right = b_right[:,:,0:1], b_right[:,:,1:2]
-    x_upper, t_upper = b_upper[:,:,0:1], b_upper[:,:,1:2]
-    x_lower, t_lower = b_lower[:,:,0:1], b_lower[:,:,1:2]
+    if model == 'trans':
+        x_res, t_res = res[:,:,0:1], res[:,:,1:2]
+        x_left, t_left = b_left[:,:,0:1], b_left[:,:,1:2]
+        x_right, t_right = b_right[:,:,0:1], b_right[:,:,1:2]
+        x_upper, t_upper = b_upper[:,:,0:1], b_upper[:,:,1:2]
+        x_lower, t_lower = b_lower[:,:,0:1], b_lower[:,:,1:2]
+        
+    else:
+        x_res, t_res = res[:,0:1], res[:,1:2]
+        x_left, t_left = b_left[:,0:1], b_left[:,1:2]
+        x_right, t_right = b_right[:,0:1], b_right[:,1:2]
+        x_upper, t_upper = b_upper[:,0:1], b_upper[:,1:2]
+        x_lower, t_lower = b_lower[:,0:1], b_lower[:,1:2]
 
+    loss_track = []
     loss_track = []
 
     for i in tqdm(range(epoch)):
@@ -127,17 +147,11 @@ if __name__ == "__main__" :
     parser = argparse.ArgumentParser(description='PyTorch PINNsformer')
 
     parser.add_argument('--model', type=str, default='trans', help='select model by name')
-    parser.add_argument('--act', type=str, default='relu', help='activation function')
     parser.add_argument('--save_pred', type=bool, default=True, help='save prediction')
     parser.add_argument('--save_loss', type=bool, default=True, help='save training loss')
     parser.add_argument('--save_model', type=bool, default=True, help='save model')
 
     parser.add_argument('--eq_name', type=str, default='convection', help='equation name')
-    # parser.add_argument('--eq_param', type=dict, help='equation coefficients')     
-    # parser.add_argument('--x_range', type=list, default=[0,1], help='range of x')
-    # parser.add_argument('--x_num', type=int, default=101, help='sample numbers along x')
-    # parser.add_argument('--y_range', type=list, default=[0,1], help='range of t')
-    # parser.add_argument('--y_num', type=int, default=101, help='sample numbers along y')
 
     parser.add_argument('--step', type=int, default=5, help='length of pseudo sequence')
     parser.add_argument('--stepsize', type=float, default=1e-4, help='stepsize of pseudo sequence')
@@ -148,26 +162,29 @@ if __name__ == "__main__" :
     device = args.dev
 
     if args.eq_name == 'convection':
-        eq_set = {'eq_name':'convection', 'eq_param':{'beta':50}, 'x_range':[0,2*np.pi], 'x_num':101, 'y_range':[0,1], 'y_num':101}
+        eq_set = {'eq_name':'convection', 'eq_param':{'beta':50}, 'x_range':[0,2*np.pi], 'y_range':[0,1]}
     if args.eq_name == '1d_reaction':
-        eq_set = {'eq_name':'1d_reaction', 'eq_param':{'p':5}, 'x_range':[0,2*np.pi], 'x_num':101, 'y_range':[0,1], 'y_num':101}
+        eq_set = {'eq_name':'1d_reaction', 'eq_param':{'p':5}, 'x_range':[0,2*np.pi], 'y_range':[0,1]}
     if args.eq_name == 'reaction_diffusion':
-        eq_set = {'eq_name':'reaction_diffusion', 'eq_param':{'p':5, 'v':5}, 'x_range':[0,2*np.pi], 'x_num':101, 'y_range':[0,1], 'y_num':101}
+        eq_set = {'eq_name':'reaction_diffusion', 'eq_param':{'p':5, 'v':5}, 'x_range':[0,2*np.pi], 'y_range':[0,1]}
     if args.eq_name == 'burger':
-        eq_set = {'eq_name':'burger', 'eq_param':{'c':0.01}, 'x_range':[-1,1], 'x_num':101, 'y_range':[0,1], 'y_num':101}
+        eq_set = {'eq_name':'burger', 'eq_param':{'c':0.01}, 'x_range':[-1,1], 'y_range':[0,1]}
     if args.eq_name == 'helmholtz':
-        eq_set = {'eq_name':'helmholtz', 'eq_param':{'a1':1, 'a2':4, 'k':1}, 'x_range':[-1,1], 'x_num':101, 'y_range':[-1,1], 'y_num':101}
+        eq_set = {'eq_name':'helmholtz', 'eq_param':{'a1':1, 'a2':4, 'k':1}, 'x_range':[-1,1], 'y_range':[-1,1]}
 
-    res, b_left, b_right, b_upper, b_lower = get_data(eq_set['x_range'], eq_set['y_range'], 101, 101)
-    model, loss_track = train(res, b_left, b_right, b_upper, b_lower, eq_set['eq_name'], eq_set['eq_param'], device=device, model=args.model, act=args.act, step=args.step, stepsize=args.stepsize)
+    res, b_left, b_right, b_upper, b_lower = get_data(eq_set['x_range'], eq_set['y_range'], 51, 51)
+    model, loss_track = train(res, b_left, b_right, b_upper, b_lower, eq_set['eq_name'], eq_set['eq_param'], device=device, model=args.model, step=args.step, stepsize=args.stepsize)
     res_test, _, _, _, _ = get_data(eq_set['x_range'], eq_set['y_range'], 101, 101)
     pred = test(res_test, model, device)
 
+    if not os.path.exists('./{}'.format(args.model)):
+        os.mkdir('./{}'.format(args.model))
+
     if args.save_pred:
-        np.save('./{}_{}/{}_{}_pred.npy'.format(args.model, args.act, eq_set['eq_name'], args.model), pred)
+        np.save('./{}/{}_{}_pred.npy'.format(args.model, eq_set['eq_name'], args.model), pred)
 
     if args.save_loss:
-        np.save('./{}_{}/{}_{}_loss.npy'.format(args.model, args.act, eq_set['eq_name'], args.model), loss_track)
+        np.save('./{}/{}_{}_loss.npy'.format(args.model, eq_set['eq_name'], args.model), loss_track)
 
     if args.save_model:
-        torch.save(model.state_dict(), './{}_{}/{}_{}_model.pkl'.format(args.model, args.act, eq_set['eq_name'], args.model))
+        torch.save(model.state_dict(), './{}/{}_{}_model.pkl'.format(args.model, eq_set['eq_name'], args.model))
