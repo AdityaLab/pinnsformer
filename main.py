@@ -22,7 +22,7 @@ def init_weights(m):
 
 def train(res, b_left, b_right, b_upper, b_lower, eq_name, eq_param, device, model='mlp', epoch=1000, step=5, stepsize=1e-4):
     if model == 'mlp':
-        model = MLP(in_dim=2, hidden_dim=512, out_dim=1, num_layer=4).to(device)
+        model = PINNs(in_dim=2, hidden_dim=512, out_dim=1, num_layer=4).to(device)
     if model == 'trans':
         model = Transformer(d_out=1, d_hidden=512, d_model=32, N=1, heads=2).to(device)
     if model == 'qres':
