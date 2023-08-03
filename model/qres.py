@@ -27,8 +27,8 @@ class QRes(nn.Module):
     def __init__(self, in_dim, hidden_dim, out_dim, num_layer):
         super(QRes, self).__init__()
         self.N = num_layer-1
-        self.inlayer = QRes_block(in_dim, hidden_dim, act_fn)
-        self.layers = get_clones(QRes_block(hidden_dim, hidden_dim, act_fn), num_layer-1)
+        self.inlayer = QRes_block(in_dim, hidden_dim)
+        self.layers = get_clones(QRes_block(hidden_dim, hidden_dim), num_layer-1)
         self.outlayer = nn.Linear(in_features=hidden_dim, out_features=out_dim)
 
     def forward(self, x, t):
