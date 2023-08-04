@@ -24,7 +24,7 @@ python3 main.py --model trans --eq_name convection --dev cuda:0
 
 The type of equation can be selected from ```{burger, convection, 1d_reaction, reaction_diffusion, helmholtz}```
 
-We also provide the demo notebooks.
+We also provide demo notebooks for convection, 1d_reaction, and 1d_wave PDEs.
 
 To visualize the loss landscape, run the above command to train and save the model first, then run the script:
 
