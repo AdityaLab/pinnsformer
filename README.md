@@ -10,21 +10,7 @@ Paper + Appendix: [https://arxiv.org/abs/2307.11833](https://arxiv.org/abs/2307.
 
 ## Training
 
-To train the baseline physics-informed neural networks (PINNs):
-
-```
-python3 main.py --model mlp --eq_name convection --dev cuda:0
-```
-
-To train the PINNsFormer:
-
-```
-python3 main.py --model trans --eq_name convection --dev cuda:0
-```
-
-The type of equation can be selected from ```{burger, convection, 1d_reaction, reaction_diffusion, helmholtz}```
-
-We also provide demo notebooks for convection, 1d_reaction, and 1d_wave PDEs.
+We also provide demo notebooks for convection, 1d_reaction, 1d_wave, and Navier-Stokes PDEs. The demos include all code for training, testing, and ground truth acquirement.
 
 To visualize the loss landscape, run the above command to train and save the model first, then run the script:
 
@@ -37,3 +23,16 @@ Please adapt the model path accordingly.
 ## Contact
 
 If you have any questions about the code, please contact Leo Zhiyuan Zhao at  ```leozhao1997[at]gatech[dot]edu```.
+
+## Citation
+
+If you find our work useful, please cite our work:
+
+```
+@article{zhao2023pinnsformer,
+  title={PINNsFormer: A Transformer-Based Framework For Physics-Informed Neural Networks},
+  author={Zhao, Leo Zhiyuan and Ding, Xueying and Prakash, B Aditya},
+  journal={arXiv preprint arXiv:2307.11833},
+  year={2023}
+}
+```

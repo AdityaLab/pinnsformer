@@ -6,7 +6,6 @@
 import torch
 import torch.nn as nn
 
-
 class PINNs(nn.Module):
     def __init__(self, in_dim, hidden_dim, out_dim, num_layer):
         super(PINNs, self).__init__()

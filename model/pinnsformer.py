@@ -4,18 +4,18 @@
 
 import torch
 import torch.nn as nn
+import pdb
 
 from util import get_clones
 
 class WaveAct(nn.Module):
     def __init__(self):
         super(WaveAct, self).__init__() 
-        self.w1 = nn.Parameter(torch.ones(1))
-        self.w2 = nn.Parameter(torch.ones(1))
+        self.w1 = nn.Parameter(torch.ones(1), requires_grad=True)
+        self.w2 = nn.Parameter(torch.ones(1), requires_grad=True)
 
     def forward(self, x):
-        return self.w1 * torch.sin(x) + self.w2 * torch.cos(x)
-
+        return self.w1 * torch.sin(x)+ self.w2 * torch.cos(x)
 
 class FeedForward(nn.Module):
     def __init__(self, d_model, d_ff=256):
@@ -43,6 +43,7 @@ class EncoderLayer(nn.Module):
         
     def forward(self, x):
         x2 = self.act1(x)
+        # pdb.set_trace()
         x = x + self.attn(x2,x2,x2)[0]
         x2 = self.act2(x)
         x = x + self.ff(x2)
@@ -112,7 +113,10 @@ class PINNsformer(nn.Module):
     def forward(self, x, t):
         src = torch.cat((x,t), dim=-1)
         src = self.linear_emb(src)
+
         e_outputs = self.encoder(src)
         d_output = self.decoder(src, e_outputs)
         output = self.linear_out(d_output)
+        # pdb.set_trace()
+        # raise Exception('stop')
         return output
