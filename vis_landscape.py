@@ -24,6 +24,7 @@ print('load done')
 res = torch.tensor(res, dtype=torch.float32, requires_grad=True).to(dev)
 
 # TODO: Compute hessian and save
+# For efficiency purpose, please save and avoid recompute
 # hessian = hessian(model=model, data=(res[:,0:1], res[:,1:2]))
 # print('hessian done')
 # ev, evec = hessian.eigenvalues(top_n=2)
