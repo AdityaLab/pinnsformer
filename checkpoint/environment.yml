@@ -1,0 +1,7 @@
+name: myenv
+dependencies:
+  - cudatoolkit=11.6.0
+  - python=3.10.4
+  - pytorch=2.0.1
+  - pytorch-cuda=11.7
+  - numpy==1.22.4
